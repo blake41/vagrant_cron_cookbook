@@ -1,23 +1,16 @@
-#
-# Cookbook Name:: cron
-# Recipe:: default
-#
-# Copyright 2012, YOUR_COMPANY_NAME
-#
-# All rights reserved - Do Not Redistribute
-
+# where do we want to log cron to?
 CRONS = {:set_path => {
                        "name" => "set path", 
                        "data" => Proc.new {
-                          user "vagrant"
+                          user "bb"
                           path "$PATH:/usr/local/bin:/usr/bin:/bin"
                         }
          },
          :minute => {
                       "name" => "minute cron",
                       "data" => Proc.new {
-                        user "vagrant"
-                        command "/bin/bash -l -c 'cd /var/www/releases && /var/www/releases/script/runner -e production_master 'Cron.run_minute'' >> /var/www/releases/log/cron.log 2>&1"
+                        user "bb"
+                        command "/bin/bash -l -c 'cd /var/www/releases/lifebooker && ./script/runner -e production_master 'Cron.run_minute'' >> /var/www/releases/lifebooker/log/cron.log 2>&1"
                         }
          },
          :half_hour => {
@@ -25,16 +18,16 @@ CRONS = {:set_path => {
                         "data" => Proc.new {
                           hour "0"
                           minute "30"
-                          user "vagrant"
-                          command "/bin/bash -l -c 'cd /var/www/releases && /var/www/releases/script/runner -e production_master 'Cron.run_half_hour'' >> /var/www/releases/log/cron.log 2>&1"
+                          user "bb"
+                          command "/bin/bash -l -c 'cd /var/www/releases/lifebooker && ./script/runner -e production_master 'Cron.run_half_hour'' >> /var/www/releases/lifebooker/log/cron.log 2>&1"
                         }
          },
          :hour => {
                    "name" => "run hour cron",
                    "data" => Proc.new {
                       minute "0"
-                      user "vagrant"
-                      command "/bin/bash -l -c 'cd /var/www/releases && /var/www/releases/script/runner -e production_master 'Cron.run_hour'' >> /var/www/releases/log/cron.log 2>&1"
+                      user "bb"
+                      command "/bin/bash -l -c 'cd /var/www/releases/lifebooker && ./script/runner -e production_master 'Cron.run_hour'' >> /var/www/releases/lifebooker/log/cron.log 2>&1"
                     }
          },
          :daily => {
@@ -42,43 +35,49 @@ CRONS = {:set_path => {
                     "data" => Proc.new {
                       hour "0"
                       minute "30"
-                      user "vagrant"
-                      command "/bin/bash -l -c 'cd /var/www/releases && /var/www/releases/script/runner -e production_master 'Cron.run_daily'' >> /var/www/releases/log/cron.log 2>&1"
+                      user "bb"
+                      command "/bin/bash -l -c 'cd /var/www/releases/lifebooker && ./script/runner -e production_master 'Cron.run_daily'' >> /var/www/releases/lifebooker/log/cron.log 2>&1"
                     }
          },
          # why is this running in the staing env?  also we had '\''RollingDiscount.move_all'\'' - what are the \ for?
          :rolling_discount => {
                                 "name" => "move rolling discounts",
                                 "data" => Proc.new {
-                                  user "vagrant"
+                                  user "bb"
                                   minute "0,5,10,15,20,25,30,35,40,45,50,55"
-                                  command "/bin/bash -l -c 'cd /var/www/releases/calendar && script/rails runner -e staging 'RollingDiscount.move_all'' >> /data/log/cron.log 2>&1"
+                                  command "/bin/bash -l -c 'cd /var/www/releases/calendar && rails runner -e staging 'RollingDiscount.move_all'' >> /data/log/cron.log 2>&1"
                                 }
-
+         :update_services => {
+                                "name" => "update number of reviews on services",
+                                "data" => Proc.new {
+                                  user "bb"
+                                  minute "0,5,10,15,20,25,30,35,40,45,50,55"
+                                  command "/bin/bash -l -c 'cd /var/www/releases/provider_api && rails runner -e production 'Service.calculate_new_ratings'' >> /data/log/cron.log 2>&1"
+                                }
          },
-         # what is this for?
+         # what is this for? and is it correct in lifebooker project?
          :ultrasphinx => {
                            "name" => "ultrasphinx",
                            "data" => Proc.new {
-                            user "vagrant"
+                            user "bb"
                             minute "0,10,20,30,40,50"
-                            command "/bin/bash -l -c '/usr/local/bin/indexer -c /var/www/current/config/ultrasphinx/production.conf --all --rotate' >> /var/www/current/log/cron.log 2>&1"
+                            command "/bin/bash -l -c '/usr/local/bin/indexer -c /var/www/releases/lifebooker/config/ultrasphinx/production.conf --all --rotate' >> /var/www/releases/lifebooker/log/cron.log 2>&1"
                            }
          },
          :sailthru => {
                         "name" => "run sailthru jobs",
                         "data" => Proc.new {
-                          user "vagrant"
+                          user "bb"
                           minute "0"
                           hour "3"
-                          command "/bin/bash -l -c 'cd /var/www/releases/lifebooker && ./script/runner -e production 'Cron.run_sailthru_jobs'' >> /var/www/releases/log/cron.log 2>&1"
+                          command "/bin/bash -l -c 'cd /var/www/releases/lifebooker && ./script/runner -e production 'Cron.run_sailthru_jobs'' >> /var/www/releases/lifebooker/log/cron.log 2>&1"
                         }
          },
          # # should we move this to the bin directory?
          :loot_certs => {
                           "name" => "clean out old Loot Certificates",
                           "data" => Proc.new {
-                            user "vagrant"
+                            user "bb"
                             minute "0"
                             hour "4"
                             command "/bin/bash -l -c '/data/clean_loot'"
@@ -94,19 +93,19 @@ CRONS = {:set_path => {
          :rotate_slave => {
                             "name" => "rotator for DB Slave backup",
                             "data" => Proc.new {
-                              user "vagrant"
+                              user "bb"
                               minute "25"
                               hour "3"
-                              command "/bin/bash -l -c '/var/www/releases/bin/snapshot_manager.rb vol-7dce3c16' >> /var/www/releases/log/cron.log 2>&1"
+                              command "/bin/bash -l -c '/var/www/releases/lifebooker/bin/snapshot_manager.rb vol-7dce3c16' >> /var/www/releases/lifebooker/log/cron.log 2>&1"
                             }
          },
          :rotate_drive => {
                             "name" => "rotator for DB Drive backup",
                             "data" => Proc.new {
-                              user "vagrant"
+                              user "bb"
                               minute "25"
                               hour "3"
-                              command "/bin/bash -l -c '/var/www/releases/bin/snapshot_manager.rb vol-49a72020' >> /var/www/releases/log/cron.log 2>&1"
+                              command "/bin/bash -l -c '/var/www/releases/lifebooker/bin/snapshot_manager.rb vol-49a72020' >> /var/www/releases/lifebooker/log/cron.log 2>&1"
                             }
          }
 }
@@ -163,7 +162,7 @@ end
 # cron "move rolling discounts" do
 #   user "vagrant"
 #   minute "0,5,10,15,20,25,30,35,40,45,50,55"
-#   command "/bin/bash -l -c 'cd /var/www/releases/calendar && script/rails runner -e staging 'RollingDiscount.move_all'' >> /data/log/cron.log 2>&1"
+#   command "/bin/bash -l -c 'cd /var/www/releases/lifebooker/calendar && script/rails runner -e staging 'RollingDiscount.move_all'' >> /data/log/cron.log 2>&1"
 # end
 
 
@@ -203,4 +202,4 @@ end
 # # # m h  dom mon dow   command
 # # 0   *   *   *   *     /home/bb/check_disk_space
 # # staging env? what are these '\' ?
-# # 0,5,10,15,20,25,30,35,40,45,50,55 * * * * /bin/bash -l -c 'cd /var/www/releases/calendar && script/rails runner -e staging '\''RollingDiscount.move_all'\'' >> /data/log/cron.log 2>&1'
+# # 0,5,10,15,20,25,30,35,40,45,50,55 * * * * /bin/bash -l -c 'cd /var/www/releases/lifebooker/calendar && script/rails runner -e staging '\''RollingDiscount.move_all'\'' >> /data/log/cron.log 2>&1'
